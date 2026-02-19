@@ -1,0 +1,176 @@
+from datetime import date, timedelta
+
+# =========================
+# KATEGORI
+# =========================
+class Kategori:
+    def __init__(self, nama_kategori, lokasi_rak):
+        self.nama_kategori = nama_kategori
+        self.lokasi_rak = lokasi_rak
+
+    def info_kategori(self):
+        print(f"Kategori: {self.nama_kategori} | Rak: {self.lokasi_rak}")
+
+
+# =========================
+# BUKU
+# =========================
+class Buku:
+    def __init__(self, id_buku, judul, penulis, tahun, kategori):
+        self.id_buku = id_buku
+        self.judul = judul
+        self.penulis = penulis
+        self.tahun = tahun
+        self.status = True
+        self.kategori = kategori
+
+    def tampil_info(self):
+        status = "Tersedia" if self.status else "Dipinjam"
+        print(f"[{self.id_buku}] {self.judul} - {self.penulis} ({self.tahun}) | {status}")
+
+    def set_status(self, status):
+        self.status = status
+
+
+# =========================
+# ANGGOTA
+# =========================
+class Anggota:
+    def __init__(self, id_anggota, nama, batas_pinjam=3):
+        self.id_anggota = id_anggota
+        self.nama = nama
+        self.batas_pinjam = batas_pinjam
+        self.daftar_pinjam = []
+
+    def pinjam_buku(self, buku):
+        if len(self.daftar_pinjam) >= self.batas_pinjam:
+            print("Batas peminjaman tercapai")
+            return False
+
+        if buku.status:
+            buku.set_status(False)
+            self.daftar_pinjam.append(buku)
+            print(f"{self.nama} meminjam {buku.judul}")
+            return True
+        else:
+            print("Buku sedang dipinjam orang lain")
+            return False
+
+    def kembalikan_buku(self, buku):
+        if buku in self.daftar_pinjam:
+            buku.set_status(True)
+            self.daftar_pinjam.remove(buku)
+            print(f"{self.nama} mengembalikan {buku.judul}")
+            return True
+        return False
+
+
+# =========================
+# DENDA
+# =========================
+class Denda:
+    def __init__(self, jumlah_hari, tarif_per_hari=1000):
+        self.jumlah_hari = jumlah_hari
+        self.tarif_per_hari = tarif_per_hari
+
+    def hitung_total(self):
+        return self.jumlah_hari * self.tarif_per_hari
+
+
+# =========================
+# TRANSAKSI PEMINJAMAN
+# =========================
+class TransaksiPeminjaman:
+    def __init__(self, anggota, buku):
+        self.tanggal_pinjam = date.today()
+        self.batas_kembali = self.tanggal_pinjam + timedelta(days=7)
+        self.tanggal_kembali = None
+        self.status = "Dipinjam"
+        self.anggota = anggota
+        self.buku = buku
+        self.denda = None
+
+    def hitung_keterlambatan(self, tanggal_kembali):
+        self.tanggal_kembali = tanggal_kembali
+        selisih = (tanggal_kembali - self.batas_kembali).days
+
+        if selisih > 0:
+            self.denda = Denda(selisih)
+            return selisih
+        return 0
+
+
+# =========================
+# PETUGAS
+# =========================
+class Petugas:
+    def __init__(self, id_petugas, nama):
+        self.id_petugas = id_petugas
+        self.nama = nama
+
+    def validasi_peminjaman(self, transaksi):
+        if transaksi.anggota.pinjam_buku(transaksi.buku):
+            print("Peminjaman divalidasi petugas")
+
+    def validasi_pengembalian(self, transaksi, tanggal_kembali):
+        if transaksi.anggota.kembalikan_buku(transaksi.buku):
+            terlambat = transaksi.hitung_keterlambatan(tanggal_kembali)
+            transaksi.status = "Selesai"
+
+            if terlambat > 0:
+                print(f"Terlambat {terlambat} hari")
+                print(f"Denda: Rp{transaksi.denda.hitung_total()}")
+            else:
+                print("Tidak ada denda")
+
+
+# =========================
+# PERPUSTAKAAN
+# =========================
+class Perpustakaan:
+    def __init__(self):
+        self.daftar_buku = []
+        self.daftar_anggota = []
+        self.daftar_transaksi = []
+
+    def tambah_buku(self, buku):
+        self.daftar_buku.append(buku)
+
+    def cari_buku(self, judul):
+        for buku in self.daftar_buku:
+            if buku.judul.lower() == judul.lower():
+                return buku
+        return None
+
+    def daftar_buku_tersedia(self):
+        print("\nDaftar Buku Tersedia:")
+        for buku in self.daftar_buku:
+            if buku.status:
+                buku.tampil_info()
+
+
+# =========================
+# SIMULASI PROGRAM
+# =========================
+perpus = Perpustakaan()
+
+kat1 = Kategori("Teknologi", "Rak A")
+buku1 = Buku("B01", "Python Dasar", "fuulan", 2022, kat1)
+buku2 = Buku("B02", "AI Modern", "fuulanah", 2021, kat1)
+
+perpus.tambah_buku(buku1)
+perpus.tambah_buku(buku2)
+
+anggota1 = Anggota("A01", "Radish")
+petugas = Petugas("P01", "Admin")
+
+# Peminjaman
+transaksi = TransaksiPeminjaman(anggota1, buku1)
+petugas.validasi_peminjaman(transaksi)
+perpus.daftar_transaksi.append(transaksi)
+
+# Pengembalian (telat 3 hari)
+tanggal_kembali = transaksi.batas_kembali + timedelta(days=3)
+petugas.validasi_pengembalian(transaksi, tanggal_kembali)
+
+perpus.daftar_buku_tersedia()
