@@ -1,0 +1,116 @@
+from datetime import date
+
+
+# ===============================
+# CLASS BOOK
+# ===============================
+class Book:
+    def __init__(self, title, author, isbn):
+        self.title = title
+        self.author = author
+        self.isbn = isbn
+        self.is_borrowed = False
+
+    def borrow(self):
+        if not self.is_borrowed:
+            self.is_borrowed = True
+            print(f"Buku '{self.title}' berhasil dipinjam.")
+        else:
+            print(f"Buku '{self.title}' sedang dipinjam.")
+
+    def return_book(self):
+        self.is_borrowed = False
+        print(f"Buku '{self.title}' telah dikembalikan.")
+
+    def __str__(self):
+        status = "Dipinjam" if self.is_borrowed else "Tersedia"
+        return f"{self.title} - {self.author} ({status})"
+
+
+# ===============================
+# CLASS MEMBER
+# ===============================
+class Member:
+    def __init__(self, name, member_id):
+        self.name = name
+        self.member_id = member_id
+        self.borrowed_books = []
+
+    def add_transaction(self, transaction):
+        self.borrowed_books.append(transaction)
+
+    def show_transactions(self):
+        print(f"\nRiwayat pinjaman {self.name}:")
+        for trx in self.borrowed_books:
+            print(f"- {trx.book.title} | Returned: {trx.returned}")
+
+
+# ===============================
+# CLASS STAFF
+# ===============================
+class Staff:
+    def __init__(self, name, staff_id):
+        self.name = name
+        self.staff_id = staff_id
+
+    def __str__(self):
+        return f"Staff: {self.name}"
+
+
+# ===============================
+# CLASS BORROW TRANSACTION
+# ===============================
+class BorrowTransaction:
+    def __init__(self, book, member, staff):
+        self.book = book
+        self.member = member
+        self.staff = staff
+        self.borrow_date = str(date.today())
+        self.returned = False
+
+    def borrow_book(self):
+        if not self.book.is_borrowed:
+            self.book.borrow()
+            self.member.add_transaction(self)
+            print(f"Diproses oleh {self.staff.name}")
+            print(f"Tanggal Pinjam: {self.borrow_date}")
+        else:
+            print("Transaksi gagal, buku sudah dipinjam.")
+
+    def return_book(self):
+        if not self.returned:
+            self.book.return_book()
+            self.returned = True
+            print(f"Buku dikembalikan melalui {self.staff.name}")
+        else:
+            print("Buku sudah dikembalikan sebelumnya.")
+
+
+# ===============================
+# PROGRAM UTAMA (SIMULASI)
+# ===============================
+
+# Object Book
+book1 = Book("La Tahzan", "Aa Gym", "ISBN001")
+book2 = Book("Python Dasar", "Budi", "ISBN002")
+
+# Object Member
+member1 = Member("Radish", "M001")
+
+# Object Staff
+staff1 = Staff("Admin Perpus", "S001")
+
+# Transaksi Peminjaman
+trx1 = BorrowTransaction(book1, member1, staff1)
+
+print("\n=== PROSES PEMINJAMAN ===")
+trx1.borrow_book()
+
+print("\n=== STATUS BUKU ===")
+print(book1)
+
+print("\n=== PROSES PENGEMBALIAN ===")
+trx1.return_book()
+
+print("\n=== RIWAYAT MEMBER ===")
+member1.show_transactions()
